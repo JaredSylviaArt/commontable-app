@@ -1,15 +1,28 @@
 
 "use server";
 
-import { suggestCategory } from "@/ai/flows/suggest-category";
-import type { SuggestCategoryInput } from "@/ai/flows/suggest-category";
 import { db, storage } from "@/lib/firebase";
 import { addDoc, collection, serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { revalidatePath } from "next/cache";
 
-export async function suggestCategoryAction(input: SuggestCategoryInput) {
+// Optional AI features - only import if available
+let suggestCategory: any = null;
+let SuggestCategoryInput: any = null;
+
+try {
+  const aiModule = require("@/ai/flows/suggest-category");
+  suggestCategory = aiModule.suggestCategory;
+  SuggestCategoryInput = aiModule.SuggestCategoryInput;
+} catch (error) {
+  console.log("AI features not available:", error);
+}
+
+export async function suggestCategoryAction(input: any) {
   try {
+    if (!suggestCategory) {
+      return { categories: [] };
+    }
     const result = await suggestCategory(input);
     return result;
   } catch (error) {
