@@ -6,29 +6,9 @@ import { addDoc, collection, serverTimestamp, doc, setDoc } from "firebase/fires
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { revalidatePath } from "next/cache";
 
-// Optional AI features - only import if available
-let suggestCategory: any = null;
-let SuggestCategoryInput: any = null;
-
-try {
-  const aiModule = require("@/ai/flows/suggest-category");
-  suggestCategory = aiModule.suggestCategory;
-  SuggestCategoryInput = aiModule.SuggestCategoryInput;
-} catch (error) {
-  console.log("AI features not available:", error);
-}
-
 export async function suggestCategoryAction(input: any) {
-  try {
-    if (!suggestCategory) {
-      return { categories: [] };
-    }
-    const result = await suggestCategory(input);
-    return result;
-  } catch (error) {
-    console.error(error);
-    return { categories: [] };
-  }
+  // AI features disabled for deployment
+  return { categories: [] };
 }
 
 export async function sendMessageAction(
