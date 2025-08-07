@@ -54,10 +54,12 @@ function SidebarContentWrapper() {
     <>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/">
-              <Logo className="w-8 h-8 text-primary" />
-            </Link>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => window.location.href = '/'}
+          >
+            <Logo className="w-8 h-8 text-primary" />
           </Button>
           <h2 className="text-xl font-headline font-semibold">CommonTable</h2>
         </div>
@@ -66,61 +68,54 @@ function SidebarContentWrapper() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               isActive={isActive('/')}
               tooltip={{ children: 'Browse' }}
+              onClick={() => window.location.href = '/'}
             >
-              <Link href="/">
-                <LayoutGrid />
-                <span>Browse</span>
-              </Link>
+              <LayoutGrid />
+              <span>Browse</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               isActive={isDashboardActive()}
               tooltip={{ children: 'Dashboard' }}
+              onClick={() => window.location.href = '/dashboard'}
             >
-              <Link href="/dashboard">
-                <User />
-                <span>Dashboard</span>
-              </Link>
+              <User />
+              <span>Dashboard</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               isActive={isActive('/messages')}
               tooltip={{ children: 'Messages' }}
+              onClick={() => window.location.href = '/messages'}
             >
-              <Link href="/messages">
-                <MessageSquare />
-                <span>Messages</span>
-              </Link>
+              <MessageSquare />
+              <span>Messages</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
             <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               isActive={isSettingsActive()}
               tooltip={{ children: 'Settings' }}
+              onClick={() => window.location.href = '/dashboard?tab=profile'}
             >
-              <Link href="/dashboard?tab=profile">
-                <Settings />
-                <span>Settings</span>
-              </Link>
+              <Settings />
+              <span>Settings</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
         <Separator className="my-4" />
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/listings/new')}>
-                  <Link href="/listings/new">
-                      <PlusCircle />
-                      <span>Create Listing</span>
-                  </Link>
+              <SidebarMenuButton 
+                isActive={isActive('/listings/new')}
+                onClick={() => window.location.href = '/listings/new'}
+              >
+                  <PlusCircle />
+                  <span>Create Listing</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

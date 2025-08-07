@@ -5,7 +5,7 @@ import { useRef, useState, useTransition } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { CalendarIcon, DollarSign, Image as ImageIcon, Loader2, Wand2, X } from "lucide-react"
+import { CalendarIcon, DollarSign, Image as ImageIcon, Loader2, Wand2, X, Upload } from "lucide-react"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 import Image from 'next/image'
@@ -68,6 +68,7 @@ export function CreateListingForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -85,6 +86,30 @@ export function CreateListingForm() {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      form.setValue("image", file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
       form.setValue("image", file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -160,7 +185,7 @@ export function CreateListingForm() {
         </CardHeader>
         <CardContent>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
                 <FormField
                     control={form.control}
@@ -170,17 +195,29 @@ export function CreateListingForm() {
                             <FormLabel>Listing Image</FormLabel>
                             <FormControl>
                                 <div 
-                                    className="w-full aspect-video rounded-md border-2 border-dashed border-input flex items-center justify-center text-muted-foreground relative cursor-pointer hover:border-primary transition-colors"
+                                    className={cn(
+                                        "w-full max-w-md aspect-square rounded-lg border-2 border-dashed border-input flex items-center justify-center text-muted-foreground relative cursor-pointer transition-all duration-200",
+                                        isDragOver ? "border-primary bg-primary/5" : "hover:border-primary hover:bg-muted/50",
+                                        imagePreview ? "border-solid" : ""
+                                    )}
                                     onClick={() => fileInputRef.current?.click()}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
                                 >
                                     {imagePreview ? (
                                         <>
-                                            <Image src={imagePreview} alt="Selected preview" layout="fill" objectFit="cover" className="rounded-md" />
+                                            <Image 
+                                                src={imagePreview} 
+                                                alt="Selected preview" 
+                                                fill 
+                                                className="object-cover rounded-lg" 
+                                            />
                                             <Button
                                                 type="button"
                                                 variant="destructive"
                                                 size="icon"
-                                                className="absolute top-2 right-2 h-7 w-7 z-10"
+                                                className="absolute top-2 right-2 h-7 w-7 z-10 shadow-sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     removeImage();
@@ -190,9 +227,12 @@ export function CreateListingForm() {
                                             </Button>
                                         </>
                                     ) : (
-                                        <div className="text-center">
-                                            <ImageIcon className="mx-auto h-12 w-12" />
-                                            <p className="mt-2 text-sm">Click to upload an image</p>
+                                        <div className="text-center p-6">
+                                            <div className="mx-auto h-12 w-12 bg-muted rounded-lg flex items-center justify-center mb-3">
+                                                <Upload className="h-6 w-6 text-muted-foreground" />
+                                            </div>
+                                            <p className="text-sm font-medium mb-1">Upload an image</p>
+                                            <p className="text-xs text-muted-foreground">Click or drag to upload</p>
                                         </div>
                                     )}
                                     <Input
@@ -205,45 +245,50 @@ export function CreateListingForm() {
                                     />
                                 </div>
                             </FormControl>
+                            <FormDescription>
+                                Upload a clear image of your item. JPG, PNG, or GIF up to 5MB.
+                            </FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
                 
-                <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                        <Input placeholder="e.g., Gently Used Stage Lights" {...field} disabled={isPending} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                <div className="grid gap-6">
+                    <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Title</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Gently Used Stage Lights" {...field} disabled={isPending} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
 
-                <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                        <Textarea
-                            placeholder="Describe your item in detail, including its condition, quantity, and why you're sharing it."
-                            className="min-h-[150px]"
-                            {...field}
-                            disabled={isPending}
-                        />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                            <Textarea
+                                placeholder="Describe your item in detail, including its condition, quantity, and why you're sharing it."
+                                className="min-h-[120px]"
+                                {...field}
+                                disabled={isPending}
+                            />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
                 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-6">
                     <FormField
                         control={form.control}
                         name="category"
@@ -321,7 +366,7 @@ export function CreateListingForm() {
                     />
                 )}
                 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-6">
                      <FormField
                         control={form.control}
                         name="condition"
@@ -360,33 +405,29 @@ export function CreateListingForm() {
                     />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
-                    <FormField
-                        control={form.control}
-                        name="contactPreference"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Contact Preference</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a preference" />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="Message">Message on CommonTable</SelectItem>
-                                        <SelectItem value="Email">Email</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    <div />
-                </div>
-                
+                <FormField
+                    control={form.control}
+                    name="contactPreference"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contact Preference</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a preference" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Message">Message on CommonTable</SelectItem>
+                                    <SelectItem value="Email">Email</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-                <Button type="submit" className="bg-accent text-accent-foreground hover:bg-accent/90" disabled={isPending}>
+                <Button type="submit" className="w-full md:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={isPending}>
                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isPending ? 'Creating...' : 'Create Listing'}
                 </Button>

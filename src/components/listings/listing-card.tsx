@@ -107,10 +107,12 @@ export default function ListingCard({ listing }: ListingCardProps) {
             <p className="text-xs text-muted-foreground">{listing.author.churchName}</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" asChild>
-            <Link href={`/listings/${listing.id}`}>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1"/>
-            </Link>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => window.location.href = `/listings/${listing.id}`}
+        >
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1"/>
         </Button>
       </CardFooter>
     </Card>
