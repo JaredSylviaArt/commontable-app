@@ -5,8 +5,9 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  LayoutGrid,
+  Home,
   MessageSquare,
+  Package,
   PlusCircle,
   Settings,
   User,
@@ -52,81 +53,91 @@ function SidebarContentWrapper() {
 
   return (
     <>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/">
-              <Logo className="w-8 h-8 text-primary" />
-            </Link>
+      <SidebarHeader className="p-6 border-b border-border/50">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => window.location.href = '/'} className="hover:bg-accent transition-colors">
+            <Logo className="w-8 h-8 text-primary" />
           </Button>
-          <h2 className="text-xl font-headline font-semibold">CommonTable</h2>
+          <div>
+            <h2 className="text-xl font-headline font-bold text-gradient">CommonTable</h2>
+            <p className="text-xs text-muted-foreground">Resource sharing platform</p>
+          </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               isActive={isActive('/')}
-              tooltip={{ children: 'Browse' }}
+              tooltip="Browse"
+              onClick={() => window.location.href = '/'}
+              className="hover:bg-accent/50 transition-colors"
             >
-              <Link href="/">
-                <LayoutGrid />
-                <span>Browse</span>
-              </Link>
+              <Home className="w-4 h-4" />
+              <span>Browse</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               isActive={isDashboardActive()}
-              tooltip={{ children: 'Dashboard' }}
+              tooltip="Dashboard"
+              onClick={() => window.location.href = '/dashboard'}
+              className="hover:bg-accent/50 transition-colors"
             >
-              <Link href="/dashboard">
-                <User />
-                <span>Dashboard</span>
-              </Link>
+              <User className="w-4 h-4" />
+              <span>Dashboard</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               isActive={isActive('/messages')}
-              tooltip={{ children: 'Messages' }}
+              tooltip="Messages"
+              onClick={() => window.location.href = '/messages'}
+              className="hover:bg-accent/50 transition-colors"
             >
-              <Link href="/messages">
-                <MessageSquare />
-                <span>Messages</span>
-              </Link>
+              <MessageSquare className="w-4 h-4" />
+              <span>Messages</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-            <SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
-              isActive={isSettingsActive()}
-              tooltip={{ children: 'Settings' }}
+              isActive={isActive('/listings')}
+              tooltip="My Listings"
+              onClick={() => window.location.href = '/listings'}
+              className="hover:bg-accent/50 transition-colors"
             >
-              <Link href="/dashboard?tab=profile">
-                <Settings />
-                <span>Settings</span>
-              </Link>
+              <Package className="w-4 h-4" />
+              <span>My Listings</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={isSettingsActive()}
+              tooltip="Settings"
+              onClick={() => window.location.href = '/dashboard?tab=profile'}
+              className="hover:bg-accent/50 transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Settings</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <Separator className="my-4" />
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/listings/new')}>
-                  <Link href="/listings/new">
-                      <PlusCircle />
-                      <span>Create Listing</span>
-                  </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+        <Separator className="my-6" />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={isActive('/listings/new')}
+              onClick={() => window.location.href = '/listings/new'}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Create Listing</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-          <p className="text-xs text-muted-foreground px-4 py-2">© 2024 CommonTable</p>
+      <SidebarFooter className="p-4 border-t border-border/50">
+          <p className="text-xs text-muted-foreground">© 2024 CommonTable</p>
       </SidebarFooter>
     </>
   )

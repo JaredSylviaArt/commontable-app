@@ -24,22 +24,31 @@ interface ListingCardProps {
 }
 
 export default function ListingCard({ listing }: ListingCardProps) {
-  const { toggleSave, isSaved } = useSavedListings();
-
-  const getImageHint = (subCategory: string) => {
-    switch (subCategory) {
-      case 'Gear': return 'stage lights';
-      case 'Curriculum': return 'kids books';
-      case 'Creative Assets': return 'graphic design';
-      default: return subCategory;
-    }
-  }
-
+  const { savedListingIds, toggleSavedListing } = useSavedListings();
+  
+  const isSaved = (id: string) => savedListingIds.includes(id);
+  
   const handleSaveClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleSave(listing.id);
-  }
+    toggleSavedListing(listing.id);
+  };
+
+  const getImageHint = (subCategory: string) => {
+    const hints: Record<string, string> = {
+      'Furniture': 'A piece of furniture',
+      'Electronics': 'An electronic device',
+      'Books': 'A book or reading material',
+      'Clothing': 'A clothing item',
+      'Tools': 'A tool or equipment',
+      'Toys': 'A toy or game',
+      'Kitchen': 'A kitchen item',
+      'Sports': 'A sports equipment',
+      'Music': 'A musical instrument',
+      'Art': 'An art piece',
+    };
+    return hints[subCategory] || 'An item';
+  };
 
   const generateGradientUrl = (id: string) => {
     // Simple hash function to get a number from a string
@@ -51,10 +60,10 @@ export default function ListingCard({ listing }: ListingCardProps) {
     const hue2 = (hue1 + 120) % 360; // 120 degrees apart for contrast
 
     return `https://placehold.co/128x128.png/000000/FFFFFF?text=%20&bg-gradient=linear-gradient(135deg, hsl(${hue1}, 80%, 70%), hsl(${hue2}, 80%, 70%))`;
-  }
+  };
   
   return (
-    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group border-l-4 border-transparent hover:border-primary">
+    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-strong hover:-translate-y-2 group border-l-4 border-transparent hover:border-primary rounded-xl">
       <CardHeader className="p-0">
         <Link href={`/listings/${listing.id}`} className="block overflow-hidden">
           <div className="aspect-[4/3] relative">
@@ -69,7 +78,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
                 size="icon" 
                 variant="secondary" 
                 onClick={handleSaveClick}
-                className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-80 hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-80 hover:opacity-100 transition-all duration-200 hover:scale-110"
             >
                 <Bookmark className={cn("w-4 h-4", isSaved(listing.id) && 'fill-current text-primary')} />
                 <span className="sr-only">Save for later</span>
@@ -79,11 +88,11 @@ export default function ListingCard({ listing }: ListingCardProps) {
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <div className="flex justify-between items-start gap-2">
-            <Badge variant="secondary">{listing.subCategory}</Badge>
+            <Badge variant="secondary" className="text-xs">{listing.subCategory}</Badge>
             {listing.price ? (
                 <div className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</div>
             ) : (
-                <Badge variant="default">{listing.category}</Badge>
+                <Badge variant="default" className="text-xs">{listing.category}</Badge>
             )}
         </div>
         <CardTitle className="mt-3 text-lg font-headline">
@@ -107,10 +116,8 @@ export default function ListingCard({ listing }: ListingCardProps) {
             <p className="text-xs text-muted-foreground">{listing.author.churchName}</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" asChild>
-            <Link href={`/listings/${listing.id}`}>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1"/>
-            </Link>
+        <Button variant="ghost" size="icon" className="hover:bg-primary/10 hover:text-primary transition-all duration-200" onClick={() => window.location.href = `/listings/${listing.id}`}>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1"/>
         </Button>
       </CardFooter>
     </Card>

@@ -1,8 +1,9 @@
 
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 import {
   Avatar,
   AvatarFallback,
@@ -48,8 +49,8 @@ export function UserNav() {
   
   if (!user) {
     return (
-      <Button asChild>
-        <Link href="/login">Log In</Link>
+      <Button onClick={() => window.location.href = '/login'}>
+        Log In
       </Button>
     )
   }
@@ -69,12 +70,12 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+        <div className="relative h-9 w-9 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer flex items-center justify-center">
           <Avatar className="h-9 w-9">
             <AvatarImage src={user.photoURL || generateGradientUrl(user.uid)} alt={user.displayName || "User"} />
             <AvatarFallback>{user.displayName ? user.displayName.charAt(0) : <UserIcon />}</AvatarFallback>
           </Avatar>
-        </Button>
+        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
@@ -87,24 +88,18 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href="/dashboard">
-            <DropdownMenuItem>
-              <LayoutGrid className="mr-2" />
-              <span>Dashboard</span>
-            </DropdownMenuItem>
-          </Link>
-           <Link href="/messages">
-            <DropdownMenuItem>
-                <Mail className="mr-2" />
-              <span>Messages</span>
-            </DropdownMenuItem>
-          </Link>
-          <Link href="/dashboard?tab=profile">
-            <DropdownMenuItem>
-              <Settings className="mr-2" />
-              <span>Profile Settings</span>
-            </DropdownMenuItem>
-          </Link>
+          <DropdownMenuItem onClick={() => window.location.href = '/dashboard'}>
+            <LayoutGrid className="mr-2" />
+            <span>Dashboard</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.location.href = '/messages'}>
+            <Mail className="mr-2" />
+            <span>Messages</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.location.href = '/dashboard?tab=profile'}>
+            <Settings className="mr-2" />
+            <span>Profile Settings</span>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>

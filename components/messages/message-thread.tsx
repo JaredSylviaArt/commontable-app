@@ -208,8 +208,8 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
                         {listing.price && (
                             <p className="text-xl font-bold text-primary mt-2">${listing.price}</p>
                         )}
-                        <Button variant="outline" className="w-full mt-4" asChild>
-                            <Link href={`/listings/${listing.id}`}>View Listing</Link>
+                        <Button variant="outline" className="w-full mt-4" onClick={() => window.location.href = `/listings/${listing.id}`}>
+                            View Listing
                         </Button>
                     </CardContent>
                 </Card>
