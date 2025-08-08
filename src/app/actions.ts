@@ -1,9 +1,8 @@
 
 "use server";
 
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { addDoc, collection, serverTimestamp, doc, setDoc } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { revalidatePath } from "next/cache";
 
 export async function suggestCategoryAction(input: any) {
@@ -35,23 +34,38 @@ export async function sendMessageAction(
 
 export async function createListingAction(userId: string, formData: FormData) {
   const rawFormData = Object.fromEntries(formData.entries());
-  // Quick validation, though client-side should handle most of this.
-  if (!userId || !rawFormData.title || !rawFormData.image) {
-      return { error: 'User ID, title, and image are required.' };
+  
+  // Quick validation
+  if (!userId || !rawFormData.title) {
+      return { error: 'User ID and title are required.' };
   }
-
-  const imageFile = rawFormData.image as File;
 
   try {
       // 1. Create a new document reference in Firestore to get a unique ID
       const newListingRef = doc(collection(db, 'listings'));
       const listingId = newListingRef.id;
       
-      // 2. Upload the image to Firebase Storage
-      const imagePath = `listings/${userId}/${listingId}/${imageFile.name}`;
-      const storageRef = ref(storage, imagePath);
-      await uploadBytes(storageRef, imageFile);
-      const imageUrl = await getDownloadURL(storageRef);
+      // 2. Handle image upload through API route if image exists
+      let imageUrl = null;
+      if (rawFormData.image && rawFormData.image instanceof File) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', rawFormData.image);
+        uploadFormData.append('userId', userId);
+        uploadFormData.append('listingId', listingId);
+        
+        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/upload`, {
+          method: 'POST',
+          body: uploadFormData,
+        });
+        
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          return { error: errorData.error || 'Failed to upload image' };
+        }
+        
+        const uploadData = await uploadResponse.json();
+        imageUrl = uploadData.imageUrl;
+      }
 
       // 3. Create the listing data object
       const listingData = {
@@ -63,7 +77,7 @@ export async function createListingAction(userId: string, formData: FormData) {
           condition: rawFormData.condition as string,
           location: rawFormData.location as string,
           contactPreference: rawFormData.contactPreference as string,
-          authorId: userId, // We'll fetch author details on the client
+          authorId: userId,
           imageUrl: imageUrl,
           createdAt: serverTimestamp(),
       };

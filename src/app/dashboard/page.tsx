@@ -2,12 +2,13 @@ import MainLayout from "@/components/layouts/main-layout";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 
-export default function DashboardPage({
+export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { tab: string | undefined };
+  searchParams: Promise<{ tab: string | undefined }>;
 }) {
-  const activeTab = searchParams.tab;
+  const params = await searchParams;
+  const activeTab = params.tab;
   const title = activeTab === 'profile' ? 'Settings' : 'Dashboard';
 
   return (
