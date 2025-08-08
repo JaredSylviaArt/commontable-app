@@ -138,39 +138,86 @@ export function CreateListingForm() {
     }
     
     startTransition(async () => {
-        const formData = new FormData();
-        Object.entries(values).forEach(([key, value]) => {
-            if (value) {
-                 if (value instanceof Date) {
-                    formData.append(key, value.toISOString());
-                } else if (typeof value === 'object' && !(value instanceof File)) {
-                    // Skip objects like shareWindow for now, or handle them specifically
-                }
-                 else {
-                    formData.append(key, value as string | Blob);
-                }
-            }
-        });
-        
-        const result = await createListingAction(user.uid, formData);
+        try {
+            // First, create the listing without the image to get the listing ID
+            const listingData = {
+                title: values.title,
+                description: values.description,
+                category: values.category,
+                subCategory: values.subCategory,
+                price: values.price,
+                condition: values.condition,
+                location: values.location,
+                contactPreference: values.contactPreference,
+                authorId: user.uid,
+                imageUrl: null, // Will be updated after upload
+                createdAt: new Date().toISOString(),
+            };
 
-        if (result?.error) {
-             toast({
-                variant: "destructive",
-                title: "Listing Creation Failed",
-                description: result.error,
+            // Create the listing in Firestore first
+            const response = await fetch('/api/listings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(listingData),
             });
-        } else {
-             toast({
+
+            if (!response.ok) {
+                throw new Error('Failed to create listing');
+            }
+
+            const { listingId } = await response.json();
+
+            // Now upload the image if it exists
+            let imageUrl = null;
+            if (values.image instanceof File) {
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', values.image);
+                uploadFormData.append('userId', user.uid);
+                uploadFormData.append('listingId', listingId);
+
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: uploadFormData,
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload image');
+                }
+
+                const uploadData = await uploadResponse.json();
+                imageUrl = uploadData.imageUrl;
+
+                // Update the listing with the image URL
+                await fetch(`/api/listings/${listingId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ imageUrl }),
+                });
+            }
+
+            toast({
                 title: "Listing Created!",
                 description: "Your listing has been successfully created.",
             });
+
             // Redirect based on whether it's a "Sell" item or not.
             if(values.category === 'Sell') {
                 router.push('/listings/new/payouts');
             } else {
-                router.push(`/listings/${result.listingId}`);
+                router.push(`/listings/${listingId}`);
             }
+
+        } catch (error) {
+            console.error('Error creating listing:', error);
+            toast({
+                variant: "destructive",
+                title: "Listing Creation Failed",
+                description: error instanceof Error ? error.message : "An unexpected error occurred.",
+            });
         }
     });
   }
