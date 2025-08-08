@@ -139,6 +139,11 @@ export function CreateListingForm() {
     
     startTransition(async () => {
         try {
+            // Add timeout to prevent indefinite hanging
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timed out')), 30000)
+            );
+
             // First, create the listing without the image to get the listing ID
             const listingData = {
                 title: values.title,
@@ -154,17 +159,21 @@ export function CreateListingForm() {
                 createdAt: new Date().toISOString(),
             };
 
-            // Create the listing in Firestore first
-            const response = await fetch('/api/listings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(listingData),
-            });
+            // Create the listing in Firestore first with timeout
+            const response = await Promise.race([
+                fetch('/api/listings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(listingData),
+                }),
+                timeoutPromise
+            ]);
 
             if (!response.ok) {
-                throw new Error('Failed to create listing');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create listing');
             }
 
             const { listingId } = await response.json();
@@ -177,26 +186,33 @@ export function CreateListingForm() {
                 uploadFormData.append('userId', user.uid);
                 uploadFormData.append('listingId', listingId);
 
-                const uploadResponse = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: uploadFormData,
-                });
+                const uploadResponse = await Promise.race([
+                    fetch('/api/upload', {
+                        method: 'POST',
+                        body: uploadFormData,
+                    }),
+                    timeoutPromise
+                ]);
 
                 if (!uploadResponse.ok) {
-                    throw new Error('Failed to upload image');
+                    const errorData = await uploadResponse.json();
+                    throw new Error(errorData.error || 'Failed to upload image');
                 }
 
                 const uploadData = await uploadResponse.json();
                 imageUrl = uploadData.imageUrl;
 
                 // Update the listing with the image URL
-                await fetch(`/api/listings/${listingId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ imageUrl }),
-                });
+                await Promise.race([
+                    fetch(`/api/listings/${listingId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ imageUrl }),
+                    }),
+                    timeoutPromise
+                ]);
             }
 
             toast({
@@ -213,10 +229,22 @@ export function CreateListingForm() {
 
         } catch (error) {
             console.error('Error creating listing:', error);
+            let errorMessage = 'An unexpected error occurred.';
+            
+            if (error instanceof Error) {
+                if (error.message.includes('Firestore API has not been used')) {
+                    errorMessage = 'Firebase Firestore is not enabled. Please enable it in your Firebase console.';
+                } else if (error.message.includes('timed out')) {
+                    errorMessage = 'Request timed out. Please try again.';
+                } else {
+                    errorMessage = error.message;
+                }
+            }
+            
             toast({
                 variant: "destructive",
                 title: "Listing Creation Failed",
-                description: error instanceof Error ? error.message : "An unexpected error occurred.",
+                description: errorMessage,
             });
         }
     });
