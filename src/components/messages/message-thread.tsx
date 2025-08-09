@@ -63,17 +63,33 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!newMessage.trim() || !user || !conversationId) return;
+      if (!newMessage.trim() || !user || !conversationId) {
+          console.log("Missing required data:", { newMessage: !!newMessage.trim(), user: !!user, conversationId });
+          return;
+      }
+
+      if (!conversation) {
+          console.error("No conversation data available");
+          return;
+      }
+
+      if (!conversation.participantIds.includes(user.uid)) {
+          console.error("User not in conversation participants:", { userId: user.uid, participantIds: conversation.participantIds });
+          return;
+      }
 
       setIsSending(true);
       const text = newMessage;
       setNewMessage("");
 
+      console.log("Sending message:", { conversationId, text: text.substring(0, 50), senderId: user.uid });
       const result = await sendMessageAction(conversationId, text, user.uid);
 
       if (result?.error) {
           console.error("Failed to send message:", result.error);
           setNewMessage(text); // Put message back in input if it failed
+      } else {
+          console.log("Message sent successfully");
       }
       setIsSending(false);
   }

@@ -19,41 +19,97 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import MainLayout from '@/components/layouts/main-layout';
 import { mockListings } from '@/lib/mock-data';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { Flag, Mail, MessageSquare, Tag, MapPin, Wrench, Bookmark, ShoppingCart, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useSavedListings } from '@/hooks/use-saved-listings';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { loadStripe } from '@stripe/stripe-js';
-
-// Make sure to put your publishable key in an environment variable.
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+import { CheckoutButton } from '@/components/stripe/checkout-button';
+import { useAuth } from '@/hooks/use-auth';
+import { createConversationAction } from '@/app/actions';
+import { useRouter } from 'next/navigation';
 
 export default function ListingDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const listing = mockListings.find((l) => l.id === id);
+  const [listing, setListing] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [messageLoading, setMessageLoading] = React.useState(false);
   const isAdmin = true; // Mock admin status
   const { toggleSave, isSaved } = useSavedListings();
   const { toast } = useToast();
-  const [isPurchasing, setIsPurchasing] = React.useState(false);
+  const { user } = useAuth();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    async function fetchListing() {
+      console.log('Fetching listing with ID:', id);
+      try {
+        // First try to find in mock data
+        const mockListing = mockListings.find((l) => l.id === id);
+        if (mockListing) {
+          console.log('Found mock listing:', mockListing);
+          setListing(mockListing);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Not found in mock data, trying Firebase...');
+        // If not in mock data, try Firebase
+        const listingDoc = await getDoc(doc(db, 'listings', id));
+        console.log('Firebase doc exists:', listingDoc.exists());
+        
+        if (listingDoc.exists()) {
+          const listingData = listingDoc.data();
+          console.log('Firebase listing data:', listingData);
+          const fetchedListing = {
+            id: listingDoc.id,
+            title: listingData.title,
+            description: listingData.description,
+            price: listingData.price,
+            imageUrl: listingData.imageUrl,
+            category: listingData.category,
+            subCategory: listingData.subCategory,
+            condition: listingData.condition,
+            location: listingData.location,
+            contactPreference: listingData.contactPreference,
+            author: {
+              id: listingData.authorId,
+              name: 'User', // Default name since we don't have user profiles yet
+              churchName: 'Local Church'
+            }
+          };
+          console.log('Setting listing:', fetchedListing);
+          setListing(fetchedListing);
+        } else {
+          console.log('No listing found in Firebase either');
+        }
+      } catch (error) {
+        console.error('Error fetching listing:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchListing();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto max-w-6xl p-4 md:p-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!listing) {
-    // Adding a delay to allow client-side rendering to catch up before showing notFound
-    const [showNotFound, setShowNotFound] = React.useState(false);
-    React.useEffect(() => {
-        const timer = setTimeout(() => {
-            if (!listing) {
-                setShowNotFound(true);
-            }
-        }, 200); // 200ms delay
-        return () => clearTimeout(timer);
-    }, [listing]);
-
-    if (showNotFound) {
-        notFound();
-    }
-    return null; // Render nothing while waiting
+    notFound();
   }
 
   const getImageHint = (subCategory: string) => {
@@ -65,42 +121,7 @@ export default function ListingDetailPage() {
     }
   }
 
-  const handlePurchase = async () => {
-    setIsPurchasing(true);
-    try {
-        const response = await fetch('/api/stripe/checkout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ listing }),
-        });
 
-        const { id: sessionId, error } = await response.json();
-        if (error) {
-            throw new Error(error);
-        }
-
-        const stripe = await stripePromise;
-        if (!stripe) {
-            throw new Error("Stripe.js has not loaded yet.");
-        }
-
-        const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
-        if (stripeError) {
-            throw new Error(stripeError.message);
-        }
-
-    } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Purchase Failed",
-            description: error.message || "Could not redirect to checkout.",
-        });
-    } finally {
-        setIsPurchasing(false);
-    }
-  }
 
   const generateGradientUrl = (id: string) => {
     // Simple hash function to get a number from a string
@@ -113,6 +134,53 @@ export default function ListingDetailPage() {
 
     return `https://placehold.co/128x128.png/000000/FFFFFF?text=%20&bg-gradient=linear-gradient(135deg, hsl(${hue1}, 80%, 70%), hsl(${hue2}, 80%, 70%))`;
   }
+
+  const handleStartConversation = async () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in to send a message.",
+      });
+      router.push('/login');
+      return;
+    }
+
+    if (!listing) return;
+
+    setMessageLoading(true);
+    try {
+      const result = await createConversationAction(
+        user.uid,
+        listing.author.id,
+        listing.id,
+        listing.title,
+        listing.imageUrl
+      );
+
+      if (result.error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Conversation started! Redirecting to messages...",
+        });
+        router.push(`/messages/${result.conversationId}`);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to start conversation. Please try again.",
+      });
+    } finally {
+      setMessageLoading(false);
+    }
+  };
 
   return (
     <MainLayout>
@@ -201,13 +269,38 @@ export default function ListingDetailPage() {
                 </div>
                 <Separator className="my-4" />
                 {listing.category === 'Sell' ? (
-                     <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handlePurchase} disabled={isPurchasing}>
-                        {isPurchasing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShoppingCart className="mr-2 h-4 w-4" />}
-                        Purchase Item
-                    </Button>
+                    <div className="space-y-3">
+                        <CheckoutButton 
+                            listingId={listing.id}
+                            title={listing.title}
+                            price={listing.price || 0}
+                            imageUrl={listing.imageUrl}
+                        />
+                        <Button 
+                            className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                            onClick={handleStartConversation}
+                            disabled={messageLoading || user?.uid === listing.author.id}
+                        >
+                            {messageLoading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <MessageSquare className="mr-2 h-4 w-4" />
+                            )}
+                            {user?.uid === listing.author.id ? "Your Listing" : "Send Message"}
+                        </Button>
+                    </div>
                 ) : (
-                    <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                        <MessageSquare className="mr-2 h-4 w-4" /> Send Message
+                    <Button 
+                        className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                        onClick={handleStartConversation}
+                        disabled={messageLoading || user?.uid === listing.author.id}
+                    >
+                        {messageLoading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                        )}
+                        {user?.uid === listing.author.id ? "Your Listing" : "Send Message"}
                     </Button>
                 )}
               </CardContent>

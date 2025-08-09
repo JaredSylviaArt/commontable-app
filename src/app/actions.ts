@@ -2,7 +2,7 @@
 "use server";
 
 import { db } from "@/lib/firebase";
-import { addDoc, collection, serverTimestamp, doc, setDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, doc, setDoc, query, where, getDocs, updateDoc, getDoc } from "firebase/firestore";
 import { revalidatePath } from "next/cache";
 
 export async function suggestCategoryAction(input: any) {
@@ -16,18 +16,131 @@ export async function sendMessageAction(
   senderId: string
 ) {
   if (!conversationId || !text || !senderId) {
+    console.error("Missing required fields:", { conversationId, text: !!text, senderId });
     return { error: "Missing required fields." };
   }
+  
   try {
+    console.log("Server: Adding message to conversation:", conversationId);
     const messagesCol = collection(db, "conversations", conversationId, "messages");
-    await addDoc(messagesCol, {
+    const docRef = await addDoc(messagesCol, {
       text: text,
       senderId: senderId,
       timestamp: serverTimestamp(),
     });
+    console.log("Server: Message added with ID:", docRef.id);
+    
+    // Update conversation's lastMessage and updatedAt
+    const conversationRef = doc(db, "conversations", conversationId);
+    await updateDoc(conversationRef, {
+      lastMessage: {
+        text: text,
+        senderId: senderId,
+        timestamp: serverTimestamp(),
+      },
+      updatedAt: serverTimestamp(),
+    });
+
+    // TODO: Send notification to other participants
+    // This would integrate with a service like SendGrid, Resend, or Firebase Functions
+    console.log("TODO: Send notification for new message");
+    
     return { success: true };
   } catch (error: any) {
     console.error("Error sending message:", error);
+    console.error("Error details:", {
+      code: error.code,
+      message: error.message,
+      conversationId,
+      senderId
+    });
+    return { error: error.message };
+  }
+}
+
+export async function createConversationAction(
+  currentUserId: string,
+  sellerId: string,
+  listingId: string,
+  listingTitle: string,
+  listingImageUrl: string
+) {
+  if (!currentUserId || !sellerId || !listingId) {
+    return { error: "Missing required fields." };
+  }
+
+  if (currentUserId === sellerId) {
+    return { error: "Cannot start conversation with yourself." };
+  }
+
+  try {
+    // Check if conversation already exists
+    const conversationsRef = collection(db, "conversations");
+    const existingQuery = query(
+      conversationsRef,
+      where("listingId", "==", listingId),
+      where("participantIds", "array-contains", currentUserId)
+    );
+    
+    const existingConversations = await getDocs(existingQuery);
+    
+    // Check if any existing conversation has both participants
+    for (const doc of existingConversations.docs) {
+      const data = doc.data();
+      if (data.participantIds.includes(sellerId)) {
+        return { success: true, conversationId: doc.id };
+      }
+    }
+
+    // Create new conversation
+    const newConversation = {
+      listingId,
+      listingTitle,
+      listingImageUrl,
+      participantIds: [currentUserId, sellerId],
+      lastMessage: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(conversationsRef, newConversation);
+    console.log("Created new conversation:", docRef.id);
+    
+    return { success: true, conversationId: docRef.id };
+  } catch (error: any) {
+    console.error("Error creating conversation:", error);
+    return { error: error.message };
+  }
+}
+
+export async function createUserProfileAction(
+  userId: string,
+  name: string,
+  email: string,
+  churchName?: string
+) {
+  if (!userId || !name || !email) {
+    return { error: "Missing required fields." };
+  }
+
+  try {
+    // Check if user profile already exists
+    const userDoc = await getDoc(doc(db, "users", userId));
+    
+    if (!userDoc.exists()) {
+      // Create new user profile
+      await setDoc(doc(db, "users", userId), {
+        name,
+        email,
+        churchName: churchName || "",
+        createdAt: serverTimestamp(),
+      });
+      console.log("Created user profile for:", userId);
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error creating user profile:", error);
     return { error: error.message };
   }
 }

@@ -5,7 +5,10 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  churchName: string;
+  churchName?: string;
+  photoURL?: string;
+  location?: string;
+  createdAt?: Timestamp;
 };
 
 export type Listing = {
@@ -49,4 +52,16 @@ export type Conversation = {
   } | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+};
+
+export type Review = {
+  id: string;
+  reviewerId: string;
+  reviewerName: string;
+  revieweeId: string;
+  rating: number; // 1-5
+  comment: string;
+  listingId?: string;
+  listingTitle?: string;
+  createdAt: Timestamp;
 };

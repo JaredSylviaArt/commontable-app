@@ -4,11 +4,11 @@ import { doc, updateDoc } from 'firebase/firestore';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
-    const listingId = params.id;
+    const { id: listingId } = await params;
 
     if (!listingId) {
       return NextResponse.json(

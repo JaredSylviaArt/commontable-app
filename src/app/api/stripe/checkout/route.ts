@@ -1,40 +1,20 @@
-import { NextResponse, NextRequest } from 'next/server';
-import Stripe from 'stripe';
+import { NextRequest, NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-if (!stripeSecretKey) {
-  console.error('Stripe secret key is not set in environment variables.');
-}
-
-// Initialize Stripe, but only if the key is available.
-const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
-
-// This is the domain of your application.
-const DOMAIN = process.env.NEXT_PUBLIC_APP_URL || 'https://commontable.app';
-
-export async function POST(req: NextRequest) {
-  if (!stripe) {
-    return NextResponse.json({ error: 'Stripe is not configured. Missing API secret key.' }, { status: 500 });
-  }
+export async function POST(request: NextRequest) {
   try {
-    const { listing } = await req.json();
+    const body = await request.json();
+    const { listingId, title, price, imageUrl } = body;
 
-    if (!listing || !listing.price || !listing.id) {
-        return NextResponse.json({ error: 'Missing listing information.' }, { status: 400 });
+    if (!listingId || !title || !price) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
-    // TODO: In a real app, you would fetch the seller's Stripe Connect account ID
-    // from your database based on the listing's author ID.
-    const sellerStripeAccountId = 'acct_...'; // Placeholder
-
-    if (!sellerStripeAccountId) {
-        return NextResponse.json({ error: 'Seller has not connected a Stripe account.' }, { status: 400 });
-    }
-
-    // Prices in Stripe are in cents, so we multiply by 100.
-    const priceInCents = Math.round(listing.price * 100);
-
+    // Create simple checkout session - buyer pays the listed price
+    // The 3% fee will be charged to the seller later when they receive payment
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -42,31 +22,29 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: listing.title,
-              images: [listing.imageUrl],
+              name: title,
+              images: imageUrl ? [imageUrl] : [],
             },
-            unit_amount: priceInCents,
+            unit_amount: Math.round(price * 100), // Convert to cents
           },
           quantity: 1,
         },
       ],
-      mode: 'payment',
-      success_url: `${DOMAIN}/listings/${listing.id}?payment_success=true`,
-      cancel_url: `${DOMAIN}/listings/${listing.id}?payment_canceled=true`,
-      payment_intent_data: {
-        // The application_fee_amount is the 3% service fee that your platform takes.
-        application_fee_amount: Math.round(priceInCents * 0.03),
-        // The transfer_data.destination is the seller's Stripe account that will receive the funds.
-        transfer_data: {
-          destination: sellerStripeAccountId,
-        },
+      mode: 'payment', // Simple one-time payment
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/listings/${listingId}?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/listings/${listingId}?canceled=true`,
+      metadata: {
+        listingId,
+        type: 'simple_payment',
       },
     });
 
-    return NextResponse.json({ id: session.id });
-
+    return NextResponse.json({ sessionId: session.id });
   } catch (error: any) {
-    console.error('Error creating checkout session:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Stripe checkout error:', error);
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
 }

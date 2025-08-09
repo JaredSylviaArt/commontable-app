@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutGrid, LogOut, Mail, Settings, User as UserIcon, Loader2 } from "lucide-react";
+import { LayoutGrid, LogOut, Mail, Settings, User as UserIcon, Loader2, Heart } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 
@@ -95,6 +95,14 @@ export function UserNav() {
           <DropdownMenuItem onClick={() => window.location.href = '/messages'}>
             <Mail className="mr-2" />
             <span>Messages</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.location.href = '/saved'}>
+            <Heart className="mr-2" />
+            <span>Saved Listings</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.location.href = `/users/${user.uid}`}>
+            <UserIcon className="mr-2" />
+            <span>My Profile</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => window.location.href = '/dashboard?tab=profile'}>
             <Settings className="mr-2" />

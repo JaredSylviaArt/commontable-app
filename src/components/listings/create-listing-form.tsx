@@ -220,12 +220,8 @@ export function CreateListingForm() {
                 description: "Your listing has been successfully created.",
             });
 
-            // Redirect based on whether it's a "Sell" item or not.
-            if(values.category === 'Sell') {
-                router.push('/listings/new/payouts');
-            } else {
-                router.push(`/listings/${listingId}`);
-            }
+            // Redirect to the listing page
+            router.push(`/listings/${listingId}`);
 
         } catch (error) {
             console.error('Error creating listing:', error);

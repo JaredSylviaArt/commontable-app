@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
 import { auth } from "@/lib/firebase"
+import { createUserProfileAction } from "@/app/actions"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
@@ -52,7 +53,15 @@ export function SignupForm() {
       await updateProfile(userCredential.user, {
         displayName: values.fullName,
       });
-      // You might want to save churchName somewhere, e.g., Firestore
+      
+      // Create user profile in Firestore
+      await createUserProfileAction(
+        userCredential.user.uid,
+        values.fullName,
+        values.email,
+        values.churchName
+      );
+      
       toast({ title: "Success", description: "Account created successfully." });
       router.push("/dashboard");
     } catch (error: any) {
