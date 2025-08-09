@@ -18,6 +18,7 @@ import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from '
 import { format } from 'date-fns';
 import type { User, Listing, Review } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { createUserProfileAction } from '@/app/actions';
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -28,6 +29,7 @@ export default function UserProfilePage() {
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [averageRating, setAverageRating] = useState(0);
+  const [missingProfile, setMissingProfile] = useState(false);
 
   useEffect(() => {
     async function fetchUserData() {
@@ -35,6 +37,17 @@ export default function UserProfilePage() {
         // Fetch user profile
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (!userDoc.exists()) {
+          // If no user document exists, create a basic one for display
+          // This handles existing users who signed up before we added profiles
+          setMissingProfile(true);
+          const basicUser: User = {
+            id: userId,
+            name: currentUser?.uid === userId ? (currentUser?.displayName || 'User') : 'User',
+            email: currentUser?.uid === userId ? (currentUser?.email || '') : '',
+            churchName: '',
+            createdAt: undefined,
+          };
+          setUser(basicUser);
           setLoading(false);
           return;
         }
@@ -91,6 +104,25 @@ export default function UserProfilePage() {
     const hue1 = hash % 360;
     const hue2 = (hue1 + 120) % 360;
     return `https://placehold.co/128x128.png/000000/FFFFFF?text=%20&bg-gradient=linear-gradient(135deg, hsl(${hue1}, 80%, 70%), hsl(${hue2}, 80%, 70%))`;
+  };
+
+  const handleCreateProfile = async () => {
+    if (!currentUser || currentUser.uid !== userId) return;
+    
+    try {
+      await createUserProfileAction(
+        currentUser.uid,
+        currentUser.displayName || 'User',
+        currentUser.email || '',
+        ''
+      );
+      
+      // Refresh the page data
+      setMissingProfile(false);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error creating profile:', error);
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -202,7 +234,14 @@ export default function UserProfilePage() {
                     </div>
                   )}
 
-                  {/* Message Button */}
+                  {/* Action Buttons */}
+                  {currentUser && currentUser.uid === userId && missingProfile && (
+                    <Button onClick={handleCreateProfile} className="w-full mb-3">
+                      <Users className="mr-2 h-4 w-4" />
+                      Complete Profile Setup
+                    </Button>
+                  )}
+                  
                   {currentUser && currentUser.uid !== userId && (
                     <Button className="w-full">
                       <MessageSquare className="mr-2 h-4 w-4" />
