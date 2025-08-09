@@ -14,16 +14,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/components/layouts/main-layout';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, setDoc, serverTimestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import type { User, Listing, Review } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { createUserProfileAction } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 export default function UserProfilePage() {
   const params = useParams();
   const userId = params.id as string;
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [userListings, setUserListings] = useState<Listing[]>([]);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
@@ -110,18 +111,29 @@ export default function UserProfilePage() {
     if (!currentUser || currentUser.uid !== userId) return;
     
     try {
-      await createUserProfileAction(
-        currentUser.uid,
-        currentUser.displayName || 'User',
-        currentUser.email || '',
-        ''
-      );
+      // Create user profile directly in Firestore
+      await setDoc(doc(db, 'users', currentUser.uid), {
+        name: currentUser.displayName || 'User',
+        email: currentUser.email || '',
+        churchName: '',
+        createdAt: serverTimestamp(),
+      });
+      
+      toast({
+        title: "Success",
+        description: "Profile created successfully!",
+      });
       
       // Refresh the page data
       setMissingProfile(false);
       window.location.reload();
     } catch (error) {
       console.error('Error creating profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create profile. Please try again.",
+      });
     }
   };
 
