@@ -9,9 +9,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: [],
-  },
+  serverExternalPackages: [],
   images: {
     remotePatterns: [
       {
@@ -41,6 +39,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'i.postimg.cc',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
         port: '',
         pathname: '/**',
       }
