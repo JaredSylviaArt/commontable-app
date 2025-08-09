@@ -19,7 +19,7 @@ import { Button } from "../ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { Skeleton } from "../ui/skeleton"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
-import { useSavedListings } from "@/hooks/use-saved-listings"
+
 import { mockListings } from "@/lib/mock-data"
 import type { Listing } from "@/lib/types"
 
@@ -30,7 +30,7 @@ const profileFormSchema = z.object({
 
 export function DashboardClient({ activeTab }: { activeTab?: string }) {
   const { user, loading } = useAuth();
-  const { savedListingIds } = useSavedListings();
+
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
   const router = useRouter();
@@ -70,7 +70,7 @@ export function DashboardClient({ activeTab }: { activeTab?: string }) {
     router.push(`/dashboard?tab=${value}`);
   };
 
-  const savedListings = mockListings.filter(listing => savedListingIds.includes(listing.id));
+
   const myListings = mockListings.filter(listing => listing.author.id === 'user-1'); // Mock of "my" listings
 
   if (loading) {
@@ -103,7 +103,7 @@ export function DashboardClient({ activeTab }: { activeTab?: string }) {
     <Tabs value={activeTab || "my-listings"} onValueChange={handleTabChange} className="space-y-4">
       <TabsList>
         <TabsTrigger value="my-listings">My Listings</TabsTrigger>
-        <TabsTrigger value="saved-posts">Saved Posts</TabsTrigger>
+
         <TabsTrigger value="profile">Profile</TabsTrigger>
       </TabsList>
       <TabsContent value="my-listings" className="space-y-4">
@@ -117,24 +117,7 @@ export function DashboardClient({ activeTab }: { activeTab?: string }) {
             </CardContent>
         </Card>
       </TabsContent>
-      <TabsContent value="saved-posts" className="space-y-4">
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Your Saved Posts</CardTitle>
-                <CardDescription>Items you're interested in and have saved for later.</CardDescription>
-            </CardHeader>
-            <CardContent>
-               {savedListings.length > 0 ? (
-                  <ListingGrid listings={savedListings} />
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p>You haven't saved any listings yet.</p>
-                    <p className="text-sm">Click the bookmark icon on a listing to save it.</p>
-                  </div>
-                )}
-            </CardContent>
-        </Card>
-      </TabsContent>
+
       <TabsContent value="profile" className="space-y-4">
         <Card>
             <CardHeader>

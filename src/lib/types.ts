@@ -11,16 +11,40 @@ export type User = {
   createdAt?: Timestamp;
 };
 
+export type Category = 'Give' | 'Sell' | 'Share';
+
+export type SubCategory = 
+  | 'Curriculum' | 'Creative Assets' | 'Gear' | 'Furniture' 
+  | 'Technology' | 'Instruments' | 'Books' | 'Supplies' | 'Other';
+
+export type Condition = 'New' | 'Like New' | 'Used' | 'For Parts';
+
+export type Tag = {
+  id: string;
+  name: string;
+  color: string;
+  category?: Category;
+};
+
+export type CustomAttribute = {
+  key: string;
+  label: string;
+  value: string;
+  type: 'text' | 'number' | 'boolean' | 'select';
+  options?: string[]; // For select type
+};
+
 export type Listing = {
   id: string;
   title: string;
   description: string;
-  category: 'Give' | 'Sell' | 'Share';
-  subCategory: 'Curriculum' | 'Creative Assets' | 'Gear' | 'Other';
+  category: Category;
+  subCategory: SubCategory;
   location: string; // ZIP code
-  condition: 'New' | 'Like New' | 'Used' | 'For Parts';
+  condition: Condition;
   contactPreference: 'Message' | 'Email';
-  imageUrl: string;
+  imageUrl: string; // Primary image for backward compatibility
+  images?: string[]; // Array of all images including primary
   price?: number;
   author: User; // This will be populated client-side
   authorId: string; // This is stored in Firestore
@@ -30,6 +54,16 @@ export type Listing = {
     start: string;
     end: string;
   };
+  // New advanced categorization fields
+  tags?: Tag[];
+  customAttributes?: CustomAttribute[];
+  keywords?: string[]; // For search optimization
+  ageGroup?: 'Kids' | 'Youth' | 'Adults' | 'All Ages';
+  deliveryOptions?: ('Pickup' | 'Local Delivery' | 'Shipping')[];
+  featured?: boolean;
+  popularity?: number; // For recommendation engine
+  views?: number;
+  bookmarks?: number;
 };
 
 export type Message = {

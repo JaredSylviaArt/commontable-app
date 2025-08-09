@@ -96,10 +96,7 @@ export function UserNav() {
             <Mail className="mr-2" />
             <span>Messages</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.location.href = '/saved'}>
-            <Heart className="mr-2" />
-            <span>Saved Listings</span>
-          </DropdownMenuItem>
+
           <DropdownMenuItem onClick={() => window.location.href = `/users/${user.uid}`}>
             <UserIcon className="mr-2" />
             <span>My Profile</span>

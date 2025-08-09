@@ -1,12 +1,37 @@
 
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { SavedListingsProvider } from '@/hooks/use-saved-listings.tsx';
+
+import { PWAInstallPrompt } from '@/components/ui/pwa-install';
 
 export const metadata: Metadata = {
   title: 'CommonTable',
   description: 'A resource sharing platform for churches.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'CommonTable',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'CommonTable',
+    title: 'CommonTable - Church Community Marketplace',
+    description: 'A resource sharing platform for churches.',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'CommonTable - Church Community Marketplace',
+    description: 'A resource sharing platform for churches.',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#665CF0',
 };
 
 export default function RootLayout({
@@ -22,10 +47,24 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <SavedListingsProvider>
-          {children}
-          <Toaster />
-        </SavedListingsProvider>
+        {children}
+        <Toaster />
+        <PWAInstallPrompt />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                  .then(function(registration) {
+                    console.log('SW registered: ', registration);
+                  })
+                  .catch(function(registrationError) {
+                    console.log('SW registration failed: ', registrationError);
+                  });
+              });
+            }
+          `
+        }} />
       </body>
     </html>
   );

@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Listing } from '@/lib/types';
+import { ImageGallerySimple } from '@/components/ui/image-gallery';
 import {
   Card,
   CardContent,
@@ -15,8 +16,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { ArrowRight, Bookmark, Tag } from 'lucide-react';
-import { useSavedListings } from '@/hooks/use-saved-listings';
+import { ArrowRight, Tag } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 interface ListingCardProps {
@@ -24,8 +25,6 @@ interface ListingCardProps {
 }
 
 export default function ListingCard({ listing }: ListingCardProps) {
-  const { toggleSave, isSaved } = useSavedListings();
-
   const getImageHint = (subCategory: string) => {
     switch (subCategory) {
       case 'Gear': return 'stage lights';
@@ -33,12 +32,6 @@ export default function ListingCard({ listing }: ListingCardProps) {
       case 'Creative Assets': return 'graphic design';
       default: return subCategory;
     }
-  }
-
-  const handleSaveClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleSave(listing.id);
   }
 
   const generateGradientUrl = (id: string) => {
@@ -58,22 +51,11 @@ export default function ListingCard({ listing }: ListingCardProps) {
       <CardHeader className="p-0">
         <Link href={`/listings/${listing.id}`} className="block overflow-hidden">
           <div className="aspect-[4/3] relative">
-            <Image
-              src={listing.imageUrl}
+            <ImageGallerySimple 
+              images={listing.images || [listing.imageUrl]} 
               alt={listing.title}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              data-ai-hint={getImageHint(listing.subCategory)}
+              className="h-full w-full"
             />
-             <Button 
-                size="icon" 
-                variant="secondary" 
-                onClick={handleSaveClick}
-                className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-80 hover:opacity-100 transition-opacity"
-            >
-                <Bookmark className={cn("w-4 h-4", isSaved(listing.id) && 'fill-current text-primary')} />
-                <span className="sr-only">Save for later</span>
-            </Button>
           </div>
         </Link>
       </CardHeader>

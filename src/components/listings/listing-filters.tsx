@@ -40,6 +40,11 @@ export interface FilterState {
   condition: string;
   datePosted: string;
   sortBy: string;
+  ageGroup?: string;
+  deliveryOptions?: string[];
+  tags?: string[];
+  featuredOnly?: boolean;
+  hasImages?: boolean;
 }
 
 interface ListingFiltersProps {
@@ -49,9 +54,11 @@ interface ListingFiltersProps {
   isMobile?: boolean;
 }
 
-const CATEGORIES = ['All', 'Give', 'Sell', 'Share'];
-const SUB_CATEGORIES = ['All', 'Curriculum', 'Creative Assets', 'Gear', 'Other'];
-const CONDITIONS = ['All', 'New', 'Like New', 'Used', 'For Parts'];
+import { CATEGORIES, SUBCATEGORIES, CONDITIONS, AGE_GROUPS, DELIVERY_OPTIONS, PREDEFINED_TAGS } from '@/lib/categories';
+
+const CATEGORY_OPTIONS = ['All', ...Object.keys(CATEGORIES)];
+const SUB_CATEGORY_OPTIONS = ['All', ...Object.keys(SUBCATEGORIES)];
+const CONDITION_OPTIONS = ['All', ...Object.keys(CONDITIONS)];
 const DATE_OPTIONS = [
   { value: 'all', label: 'All Time' },
   { value: '24h', label: 'Last 24 Hours' },
@@ -153,9 +160,9 @@ export function ListingFilters({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CATEGORIES.map((category) => (
+            {CATEGORY_OPTIONS.map((category) => (
               <SelectItem key={category} value={category}>
-                {category}
+                {category === 'All' ? category : CATEGORIES[category] || category}
               </SelectItem>
             ))}
           </SelectContent>
@@ -170,9 +177,9 @@ export function ListingFilters({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SUB_CATEGORIES.map((subCategory) => (
+            {SUB_CATEGORY_OPTIONS.map((subCategory) => (
               <SelectItem key={subCategory} value={subCategory}>
-                {subCategory}
+                {subCategory === 'All' ? subCategory : `${SUBCATEGORIES[subCategory]?.icon || ''} ${SUBCATEGORIES[subCategory]?.label || subCategory}`}
               </SelectItem>
             ))}
           </SelectContent>
@@ -187,9 +194,9 @@ export function ListingFilters({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CONDITIONS.map((condition) => (
+            {CONDITION_OPTIONS.map((condition) => (
               <SelectItem key={condition} value={condition}>
-                {condition}
+                {condition === 'All' ? condition : CONDITIONS[condition]?.label || condition}
               </SelectItem>
             ))}
           </SelectContent>

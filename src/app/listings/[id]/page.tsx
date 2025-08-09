@@ -19,11 +19,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import MainLayout from '@/components/layouts/main-layout';
 import { mockListings } from '@/lib/mock-data';
+import { Recommendations } from "@/components/listings/recommendations";
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Flag, Mail, MessageSquare, Tag, MapPin, Wrench, Bookmark, ShoppingCart, Loader2 } from 'lucide-react';
+import { Flag, Mail, MessageSquare, Tag, MapPin, Wrench, ShoppingCart, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { useSavedListings } from '@/hooks/use-saved-listings';
+
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CheckoutButton } from '@/components/stripe/checkout-button';
@@ -38,7 +39,7 @@ export default function ListingDetailPage() {
   const [loading, setLoading] = React.useState(true);
   const [messageLoading, setMessageLoading] = React.useState(false);
   const isAdmin = true; // Mock admin status
-  const { toggleSave, isSaved } = useSavedListings();
+
   const { toast } = useToast();
   const { user } = useAuth();
   const router = useRouter();
@@ -221,10 +222,7 @@ export default function ListingDetailPage() {
                                 </p>
                             )}
                         </div>
-                        <Button variant="outline" size="lg" onClick={() => toggleSave(listing.id)} className="shrink-0">
-                            <Bookmark className={cn("mr-2 h-5 w-5", isSaved(listing.id) && "fill-current text-primary")} /> 
-                            {isSaved(listing.id) ? 'Saved' : 'Save for Later'}
-                        </Button>
+
                     </div>
                     <div className="flex flex-wrap gap-2 mb-4">
                         <Badge variant="default">{listing.category}</Badge>
@@ -325,6 +323,16 @@ export default function ListingDetailPage() {
                 <Flag className="mr-2 h-4 w-4" /> Flag this listing
             </Button>
           </div>
+        </div>
+        
+        {/* Recommendations Section */}
+        <div className="mt-12">
+          <Recommendations 
+            currentListing={listing} 
+            type="similar" 
+            limit={6}
+            className="mb-8"
+          />
         </div>
       </div>
     </MainLayout>
