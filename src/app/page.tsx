@@ -8,6 +8,7 @@ import { useListingsFilter } from '@/hooks/use-listings-filter';
 import { mockListings } from '@/lib/mock-data';
 import { Filter, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EnhancedSearch } from '@/components/ui/enhanced-search';
 
 export default function HomePage() {
   const [showFilters, setShowFilters] = useState(false);
@@ -54,6 +55,16 @@ export default function HomePage() {
           <SortDropdown 
             value={filters.sortBy} 
             onChange={(value) => updateFilters({ ...filters, sortBy: value })} 
+          />
+        </div>
+
+        {/* Enhanced Search */}
+        <div className="mb-6">
+          <EnhancedSearch
+            value={filters.search}
+            onChange={(value) => updateFilters({ ...filters, search: value })}
+            placeholder="Search listings, categories, locations..."
+            className="max-w-2xl mx-auto"
           />
         </div>
 

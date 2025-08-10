@@ -11,6 +11,7 @@ import {
   Settings,
   User,
 } from 'lucide-react';
+import { FloatingActionButton } from '@/components/ui/floating-action-button';
 
 import {
   SidebarProvider,
@@ -140,6 +141,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <div className="min-h-[calc(100vh-4rem)]">
             {children}
         </div>
+        <FloatingActionButton />
       </SidebarInset>
     </SidebarProvider>
   );
