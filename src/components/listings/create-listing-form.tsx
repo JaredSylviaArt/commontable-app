@@ -36,6 +36,9 @@ import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
+import { db, storage } from "@/lib/firebase"
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters long."),
@@ -156,63 +159,32 @@ export function CreateListingForm() {
                 contactPreference: values.contactPreference,
                 authorId: user.uid,
                 imageUrl: null, // Will be updated after upload
-                createdAt: new Date().toISOString(),
+                createdAt: serverTimestamp(),
             };
 
-            // Create the listing in Firestore first with timeout
-            const response = await Promise.race([
-                fetch('/api/listings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(listingData),
-                }),
-                timeoutPromise
-            ]);
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to create listing');
-            }
-
-            const { listingId } = await response.json();
+            // Create the listing in Firestore directly (client-side)
+            const docRef = await addDoc(collection(db, 'listings'), listingData);
+            const listingId = docRef.id;
 
             // Now upload the image if it exists
             let imageUrl = null;
             if (values.image instanceof File) {
-                const uploadFormData = new FormData();
-                uploadFormData.append('file', values.image);
-                uploadFormData.append('userId', user.uid);
-                uploadFormData.append('listingId', listingId);
-
-                const uploadResponse = await Promise.race([
-                    fetch('/api/upload', {
-                        method: 'POST',
-                        body: uploadFormData,
-                    }),
-                    timeoutPromise
-                ]);
-
-                if (!uploadResponse.ok) {
-                    const errorData = await uploadResponse.json();
-                    throw new Error(errorData.error || 'Failed to upload image');
+                // Check file size (10MB limit)
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (values.image.size > maxSize) {
+                    throw new Error('File size too large. Maximum size is 10MB.');
                 }
 
-                const uploadData = await uploadResponse.json();
-                imageUrl = uploadData.imageUrl;
+                // Upload to Firebase Storage (client-side with authentication)
+                const imagePath = `listings/${user.uid}/${listingId}/${values.image.name}`;
+                const storageRef = ref(storage, imagePath);
+                await uploadBytes(storageRef, values.image);
+                imageUrl = await getDownloadURL(storageRef);
 
                 // Update the listing with the image URL
-                await Promise.race([
-                    fetch(`/api/listings/${listingId}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ imageUrl }),
-                    }),
-                    timeoutPromise
-                ]);
+                await updateDoc(doc(db, 'listings', listingId), {
+                    imageUrl: imageUrl
+                });
             }
 
             toast({

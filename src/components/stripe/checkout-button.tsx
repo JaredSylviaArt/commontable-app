@@ -12,6 +12,8 @@ interface CheckoutButtonProps {
   price: number;
   imageUrl?: string;
   disabled?: boolean;
+  buyerId: string;
+  deliveryMethod?: 'pickup' | 'local_delivery' | 'shipping';
 }
 
 export function CheckoutButton({ 
@@ -19,7 +21,9 @@ export function CheckoutButton({
   title, 
   price, 
   imageUrl, 
-  disabled = false 
+  disabled = false,
+  buyerId,
+  deliveryMethod = 'pickup'
 }: CheckoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,9 +39,8 @@ export function CheckoutButton({
         },
         body: JSON.stringify({
           listingId,
-          title,
-          price,
-          imageUrl,
+          buyerId,
+          deliveryMethod,
         }),
       });
 

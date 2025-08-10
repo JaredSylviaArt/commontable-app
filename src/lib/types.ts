@@ -9,6 +9,11 @@ export type User = {
   photoURL?: string;
   location?: string;
   createdAt?: Timestamp;
+  // Stripe integration fields
+  stripeAccountId?: string;
+  stripeOnboardingComplete?: boolean;
+  stripeChargesEnabled?: boolean;
+  stripePayoutsEnabled?: boolean;
 };
 
 export type Category = 'Give' | 'Sell' | 'Share';
@@ -33,6 +38,8 @@ export type CustomAttribute = {
   type: 'text' | 'number' | 'boolean' | 'select';
   options?: string[]; // For select type
 };
+
+export type ListingStatus = 'active' | 'sold' | 'pending' | 'removed';
 
 export type Listing = {
   id: string;
@@ -64,6 +71,15 @@ export type Listing = {
   popularity?: number; // For recommendation engine
   views?: number;
   bookmarks?: number;
+  // Stripe integration fields
+  status?: ListingStatus;
+  soldAt?: Timestamp;
+  paymentIntentId?: string;
+  buyerId?: string;
+  payoutAmount?: number;
+  platformFee?: number;
+  transferId?: string;
+  stripeAccountId?: string; // Seller's Stripe Connect account
 };
 
 export type Message = {
@@ -98,4 +114,50 @@ export type Review = {
   listingId?: string;
   listingTitle?: string;
   createdAt: Timestamp;
+};
+
+export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+
+export type Transaction = {
+  id: string;
+  listingId: string;
+  buyerId: string;
+  sellerId: string;
+  amount: number; // Total amount paid by buyer
+  platformFee: number; // 3% fee
+  sellerPayout: number; // Amount to be paid to seller
+  status: TransactionStatus;
+  paymentIntentId: string;
+  transferId?: string; // Stripe transfer ID for payout
+  createdAt: Timestamp;
+  completedAt?: Timestamp;
+  refundedAt?: Timestamp;
+  metadata?: {
+    listingTitle: string;
+    buyerEmail?: string;
+    sellerEmail?: string;
+  };
+};
+
+export type Order = {
+  id: string;
+  transactionId: string;
+  listingId: string;
+  buyerId: string;
+  sellerId: string;
+  status: 'pending_payment' | 'paid' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
+  shippingAddress?: {
+    name: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  };
+  deliveryMethod: 'pickup' | 'local_delivery' | 'shipping';
+  trackingNumber?: string;
+  notes?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 };

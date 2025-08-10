@@ -26,6 +26,16 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+  // Skip caching for API routes and dev files
+  if (event.request.url.includes('/api/') || 
+      event.request.url.includes('/_next/') ||
+      event.request.url.includes('/__nextjs_') ||
+      event.request.url.includes('/webpack-hmr')) {
+    // Just fetch normally for API routes and dev files
+    event.respondWith(fetch(event.request))
+    return
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

@@ -1,12 +1,13 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { updateProfile } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
+import { doc, getDoc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -22,6 +23,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 
 import { mockListings } from "@/lib/mock-data"
 import type { Listing } from "@/lib/types"
+import { ConnectOnboarding } from "@/components/stripe/connect-onboarding"
 
 const profileFormSchema = z.object({
   fullName: z.string().min(1, { message: "Full name is required." }),
@@ -30,10 +32,35 @@ const profileFormSchema = z.object({
 
 export function DashboardClient({ activeTab }: { activeTab?: string }) {
   const { user, loading } = useAuth();
-
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [stripeData, setStripeData] = useState<{
+    stripeAccountId?: string;
+    stripeOnboardingComplete?: boolean;
+  }>({});
   const router = useRouter();
+
+  // Fetch user's Stripe data from Firestore
+  const fetchStripeData = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setStripeData({
+          stripeAccountId: userData.stripeAccountId,
+          stripeOnboardingComplete: userData.stripeOnboardingComplete,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStripeData();
+  }, [user?.uid]);
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -165,6 +192,18 @@ export function DashboardClient({ activeTab }: { activeTab?: string }) {
               </Form>
             </CardContent>
         </Card>
+
+        {/* Payment Setup Section */}
+        <ConnectOnboarding 
+          userId={user.uid}
+          userEmail={user.email || ''}
+          stripeAccountId={stripeData.stripeAccountId}
+          onboardingComplete={stripeData.stripeOnboardingComplete || false}
+          onSuccess={() => {
+            // Refresh stripe data when onboarding is complete
+            fetchStripeData();
+          }}
+        />
       </TabsContent>
     </Tabs>
   )
