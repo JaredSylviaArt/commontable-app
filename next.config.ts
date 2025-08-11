@@ -11,9 +11,7 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ["@google/generative-ai"],
   transpilePackages: ['@radix-ui/react-icons'],
-  experimental: {
-    esmExternals: 'loose',
-  },
+
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
