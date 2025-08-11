@@ -16,21 +16,43 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+// Check if Firebase config is available
+const isFirebaseConfigured = Object.values(firebaseConfig).every(value => value);
 
-// Initialize auth providers
-const googleProvider = new GoogleAuthProvider();
-const facebookProvider = new FacebookAuthProvider();
+// Initialize Firebase only if properly configured
+let app: any = null;
+let auth: any = null;
+let db: any = null;
+let storage: any = null;
 
-// Configure providers
-googleProvider.addScope('email');
-googleProvider.addScope('profile');
+if (isFirebaseConfigured) {
+  try {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+  } catch (error) {
+    console.warn('Firebase initialization failed:', error);
+  }
+}
 
-facebookProvider.addScope('email');
-facebookProvider.addScope('public_profile');
+// Initialize auth providers only if Firebase is configured
+let googleProvider: GoogleAuthProvider | null = null;
+let facebookProvider: FacebookAuthProvider | null = null;
 
-export { app, auth, db, storage, googleProvider, facebookProvider };
+if (isFirebaseConfigured && auth) {
+  try {
+    googleProvider = new GoogleAuthProvider();
+    facebookProvider = new FacebookAuthProvider();
+
+    // Configure providers
+    googleProvider.addScope('email');
+    googleProvider.addScope('profile');
+    facebookProvider.addScope('email');
+    facebookProvider.addScope('public_profile');
+  } catch (error) {
+    console.warn('Auth providers initialization failed:', error);
+  }
+}
+
+export { app, auth, db, storage, googleProvider, facebookProvider, isFirebaseConfigured };
