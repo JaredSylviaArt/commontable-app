@@ -275,8 +275,16 @@ export function SearchResults({
     handleSearch(term, {});
   };
 
-  // Show initial state before any search
-  const showInitialState = !hasSearched && !currentQuery && listings.length === 0;
+  // Show initial state before any search - but still load listings
+  const showInitialState = !hasSearched && !currentQuery;
+  
+  // Auto-load listings on mount
+  useEffect(() => {
+    if (!hasSearched && !currentQuery && listings.length === 0) {
+      // Trigger initial load of all listings
+      handleSearch('', {});
+    }
+  }, [hasSearched, currentQuery, listings.length, handleSearch]);
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -406,31 +414,66 @@ export function SearchResults({
               </Card>
             </div>
           )}
-        </div>
-      )}
 
-      {/* Search Results */}
-      {(hasSearched || currentQuery) && (
-        <div className="space-y-6">
-          {/* Quick Stats */}
-          {!isLoading && listings.length > 0 && (
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Eye className="h-3 w-3" />
-                <span>{listings.reduce((sum, listing) => sum + (listing.views || 0), 0).toLocaleString()} total views</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Heart className="h-3 w-3" />
-                <span>{listings.filter(listing => listing.isLiked).length} liked items</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                <span>Updated {new Date().toLocaleTimeString()}</span>
+          {/* All Listings Section */}
+          {listings.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Browse All Listings</h2>
+                <Badge variant="outline" className="text-sm">
+                  {total?.toLocaleString()} items available
+                </Badge>
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {/* Results Grid */}
+      {/* Listings Grid - Show for both search results and initial load */}
+      {listings.length > 0 && (
+        <div className="space-y-6">
+          {/* Search Results Header - Only show when actively searching */}
+          {(hasSearched || currentQuery) && (
+            <>
+              {/* Quick Stats */}
+              {!isLoading && (
+                <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    <span>{listings.reduce((sum, listing) => sum + (listing.views || 0), 0).toLocaleString()} total views</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Heart className="h-3 w-3" />
+                    <span>{listings.filter(listing => listing.isLiked).length} liked items</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>Updated {new Date().toLocaleTimeString()}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Search Performance */}
+              {!isLoading && (
+                <Alert>
+                  <Sparkles className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="flex items-center justify-between">
+                      <span>
+                        Found {total?.toLocaleString()} results using advanced fuzzy search
+                        {isSearching && <span className="animate-pulse"> • Searching...</span>}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        AI-Powered
+                      </Badge>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </>
+          )}
+
+          {/* Results Grid - Always show when we have listings */}
           <InfiniteListingsGrid
             searchQuery={currentQuery}
             category={currentFilters.category}
@@ -440,24 +483,6 @@ export function SearchResults({
             showAuthor={true}
             showStats={true}
           />
-
-          {/* Search Performance */}
-          {!isLoading && listings.length > 0 && (
-            <Alert>
-              <Sparkles className="h-4 w-4" />
-              <AlertDescription>
-                <div className="flex items-center justify-between">
-                  <span>
-                    Found {total?.toLocaleString()} results using advanced fuzzy search
-                    {isSearching && <span className="animate-pulse"> • Searching...</span>}
-                  </span>
-                  <Badge variant="outline" className="text-xs">
-                    AI-Powered
-                  </Badge>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
       )}
 
