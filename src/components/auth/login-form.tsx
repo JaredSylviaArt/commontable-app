@@ -8,10 +8,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { signInWithEmailAndPassword } from "firebase/auth"
 import { auth } from "@/lib/firebase"
-import { authService } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
-import { FcGoogle } from "react-icons/fc"
-import { FaFacebook } from "react-icons/fa"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -35,7 +32,6 @@ export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,17 +44,9 @@ export function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const result = await authService.signInWithEmail(values.email, values.password);
-      if (result.error) {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: result.error,
-        });
-      } else {
-        toast({ title: "Success", description: "Logged in successfully." });
-        router.push("/dashboard");
-      }
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({ title: "Success", description: "Logged in successfully." });
+      router.push("/dashboard");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -70,107 +58,8 @@ export function LoginForm() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    setSocialLoading('google');
-    try {
-      const result = await authService.signInWithGoogle();
-      if (result.error) {
-        toast({
-          variant: "destructive",
-          title: "Google Sign-In Failed",
-          description: result.error,
-        });
-      } else {
-        toast({ 
-          title: "Success", 
-          description: result.isNewUser ? "Account created successfully!" : "Logged in successfully." 
-        });
-        router.push("/dashboard");
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Google Sign-In Failed",
-        description: error.message,
-      });
-    } finally {
-      setSocialLoading(null);
-    }
-  };
-
-  const handleFacebookSignIn = async () => {
-    setSocialLoading('facebook');
-    try {
-      const result = await authService.signInWithFacebook();
-      if (result.error) {
-        toast({
-          variant: "destructive",
-          title: "Facebook Sign-In Failed",
-          description: result.error,
-        });
-      } else {
-        toast({ 
-          title: "Success", 
-          description: result.isNewUser ? "Account created successfully!" : "Logged in successfully." 
-        });
-        router.push("/dashboard");
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Facebook Sign-In Failed",
-        description: error.message,
-      });
-    } finally {
-      setSocialLoading(null);
-    }
-  };
-
   return (
     <div className="grid gap-6">
-      {/* Social Login Buttons */}
-      <div className="grid gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleGoogleSignIn}
-          disabled={socialLoading !== null || isLoading}
-          className="w-full"
-        >
-          {socialLoading === 'google' ? (
-            <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
-          ) : (
-            <FcGoogle className="w-4 h-4" />
-          )}
-          <span className="ml-2">Continue with Google</span>
-        </Button>
-        
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleFacebookSignIn}
-          disabled={socialLoading !== null || isLoading}
-          className="w-full"
-        >
-          {socialLoading === 'facebook' ? (
-            <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-          ) : (
-            <FaFacebook className="w-4 h-4 text-blue-600" />
-          )}
-          <span className="ml-2">Continue with Facebook</span>
-        </Button>
-      </div>
-
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-muted-foreground/20" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
-        </div>
-      </div>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
           <FormField
