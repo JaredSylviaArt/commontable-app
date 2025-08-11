@@ -10,6 +10,27 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   serverExternalPackages: ["@google/generative-ai"],
+  transpilePackages: ['@radix-ui/react-icons'],
+  experimental: {
+    esmExternals: 'loose',
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    
+    // Handle @radix-ui modules properly
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    
+    return config;
+  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
