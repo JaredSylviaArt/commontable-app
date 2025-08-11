@@ -12,6 +12,8 @@ import {
   User,
 } from 'lucide-react';
 import { FloatingActionButton } from '@/components/ui/floating-action-button';
+import { RealtimeNotifications, RealtimeToastContainer } from '@/components/ui/realtime-notifications';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 import {
   SidebarProvider,
@@ -122,6 +124,14 @@ function SidebarContentWrapper() {
           </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <div className="flex items-center justify-center gap-3 px-2 py-2">
+                <ThemeToggle />
+                <RealtimeNotifications userId="current-user" />
+              </div>
+            </SidebarMenuItem>
+          </SidebarMenu>
           <p className="text-xs text-muted-foreground px-4 py-2">© 2024 CommonTable</p>
       </SidebarFooter>
     </>
@@ -142,6 +152,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             {children}
         </div>
         <FloatingActionButton />
+        <RealtimeToastContainer />
       </SidebarInset>
     </SidebarProvider>
   );
