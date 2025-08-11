@@ -1,30 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authRateLimiter, apiRateLimiter, uploadRateLimiter, messagingRateLimiter } from './lib/rate-limiter';
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Apply different rate limiting based on the route
-  if (pathname.startsWith('/api/auth/')) {
-    // Strict rate limiting for authentication endpoints
-    return authRateLimiter.middleware()(request);
-  }
-  
-  if (pathname.startsWith('/api/upload/')) {
-    // Tight rate limiting for file uploads
-    return uploadRateLimiter.middleware()(request);
-  }
-  
-  if (pathname.startsWith('/api/messages/')) {
-    // Moderate rate limiting for messaging
-    return messagingRateLimiter.middleware()(request);
-  }
-  
-  if (pathname.startsWith('/api/')) {
-    // General API rate limiting
-    return apiRateLimiter.middleware()(request);
-  }
-
   // Security headers for all responses
   const response = NextResponse.next();
   
