@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import { createUserProfileAction } from "@/app/actions"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
@@ -47,6 +47,15 @@ export function SignupForm() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!auth) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Unavailable",
+        description: "Firebase authentication is not configured.",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
@@ -54,13 +63,15 @@ export function SignupForm() {
         displayName: values.fullName,
       });
       
-      // Create user profile in Firestore
-      await createUserProfileAction(
-        userCredential.user.uid,
-        values.fullName,
-        values.email,
-        values.churchName
-      );
+      // Create user profile in Firestore (only if db is available)
+      if (db) {
+        await createUserProfileAction(
+          userCredential.user.uid,
+          values.fullName,
+          values.email,
+          values.churchName
+        );
+      }
       
       toast({ title: "Success", description: "Account created successfully." });
       router.push("/dashboard");

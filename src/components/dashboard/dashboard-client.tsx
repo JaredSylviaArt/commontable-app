@@ -42,7 +42,7 @@ export function DashboardClient({ activeTab }: { activeTab?: string }) {
 
   // Fetch user's Stripe data from Firestore
   const fetchStripeData = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid || !db) return;
     
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));

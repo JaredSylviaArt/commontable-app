@@ -17,7 +17,7 @@ const firebaseConfig = {
 };
 
 // Check if Firebase config is available
-const isFirebaseConfigured = Object.values(firebaseConfig).every(value => value);
+const isFirebaseConfigured = Object.values(firebaseConfig).every(value => value && value !== 'undefined');
 
 // Initialize Firebase only if properly configured
 let app: any = null;
@@ -25,6 +25,7 @@ let auth: any = null;
 let db: any = null;
 let storage: any = null;
 
+// Only initialize Firebase if we have valid configuration
 if (isFirebaseConfigured) {
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -40,27 +41,8 @@ if (isFirebaseConfigured) {
     storage = null;
   }
 } else {
-  // Suppress Firebase console warnings when not configured
-  if (typeof window !== 'undefined') {
-    const originalConsoleWarn = console.warn;
-    const originalConsoleError = console.error;
-    
-    console.warn = (...args) => {
-      const message = args.join(' ');
-      if (message.includes('Firebase') || message.includes('Firestore')) {
-        return; // Suppress Firebase warnings
-      }
-      originalConsoleWarn.apply(console, args);
-    };
-    
-    console.error = (...args) => {
-      const message = args.join(' ');
-      if (message.includes('Firebase') || message.includes('Firestore')) {
-        return; // Suppress Firebase errors
-      }
-      originalConsoleError.apply(console, args);
-    };
-  }
+  // Firebase not configured - create mock implementations to prevent errors
+  console.log('Firebase not configured - running without Firebase features');
 }
 
 // Initialize auth providers only if Firebase is configured
