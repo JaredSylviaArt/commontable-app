@@ -1,5 +1,3 @@
-"use server";
-
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 

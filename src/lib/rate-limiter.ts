@@ -1,5 +1,3 @@
-"use server";
-
 import { NextRequest, NextResponse } from 'next/server';
 
 // In-memory store for rate limiting (in production, use Redis)

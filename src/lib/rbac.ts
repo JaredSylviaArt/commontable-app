@@ -1,5 +1,3 @@
-"use server";
-
 import { UserRole } from './auth';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
