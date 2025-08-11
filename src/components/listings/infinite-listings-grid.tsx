@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { OptimizedImage, ListingImage } from '@/components/ui/optimized-image';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -191,14 +191,14 @@ export function InfiniteListingsGrid({
   };
 
   // Monitor scroll position for "scroll to top" button
-  useState(() => {
+  useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 1000);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  });
+  }, []);
 
   const formatPrice = (price: number | null) => {
     if (price === null) return 'Free';
