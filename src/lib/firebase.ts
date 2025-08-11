@@ -33,6 +33,33 @@ if (isFirebaseConfigured) {
     storage = getStorage(app);
   } catch (error) {
     console.warn('Firebase initialization failed:', error);
+    // Reset to null if initialization fails
+    app = null;
+    auth = null;
+    db = null;
+    storage = null;
+  }
+} else {
+  // Suppress Firebase console warnings when not configured
+  if (typeof window !== 'undefined') {
+    const originalConsoleWarn = console.warn;
+    const originalConsoleError = console.error;
+    
+    console.warn = (...args) => {
+      const message = args.join(' ');
+      if (message.includes('Firebase') || message.includes('Firestore')) {
+        return; // Suppress Firebase warnings
+      }
+      originalConsoleWarn.apply(console, args);
+    };
+    
+    console.error = (...args) => {
+      const message = args.join(' ');
+      if (message.includes('Firebase') || message.includes('Firestore')) {
+        return; // Suppress Firebase errors
+      }
+      originalConsoleError.apply(console, args);
+    };
   }
 }
 
